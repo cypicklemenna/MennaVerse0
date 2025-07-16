@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mennaverese Canvas Blog</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --peige: #cc9260;
+      --peige-light: #e8c9ab;
+      --peige-dark: #9e6d3f;
+      --text-color: #2c2a25;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Rubik', sans-serif;
+      background-color: var(--peige);
+      color: var(--text-color);
+    }
+
+    .hero {
+      height: 100vh;
+      background: url('https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752584759/q1xqpho1cf87esvhfxhv.jpg') no-repeat center center;
+      background-size: cover;
+      position: relative;
+    }
+
+    .quote {
+      max-width: 850px;
+      margin: 20px auto 40px;
+      font-size: 1.3em;
+      font-weight: bold;
+      color: var(--text-color);
+      text-align: left;
+      font-family: Georgia, serif;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto 80px;
+      padding: 0 20px;
+    }
+
+    .editor-toggle {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .add-post, .canvas-editor {
+      background: var(--peige-light);
+      padding: 20px;
+      border: 2px solid var(--peige-dark);
+      border-radius: 12px;
+      margin-bottom: 40px;
+      display: none;
+    }
+
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 12px;
+      background: #fef9f4;
+      border: 1px solid var(--peige-dark);
+      color: var(--text-color);
+      border-radius: 8px;
+      font-family: inherit;
+    }
+
+    button {
+      background: var(--text-color);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .post {
+      background: var(--peige-light);
+      border: 1px solid var(--peige-dark);
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+    }
+
+    .post h2 {
+      margin-bottom: 0;
+    }
+
+    .date {
+      font-size: 0.9em;
+      margin-bottom: 10px;
+      color: #5e4a33;
+    }
+
+    .post img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin: 15px 0;
+    }
+
+    #canvas-area {
+      width: 100%;
+      min-height: 300px;
+      background-color: #fef9f4;
+      border: 2px dashed #b07b4f;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .draggable {
+      position: absolute;
+      cursor: move;
+      user-select: none;
+    }
+
+    .canvas-toolbar {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="hero"></div>
+
+  <div class="page">
+    <div class="quote">“Man ist nicht immer frei, aber man kann immer rebellieren.”</div>
+
+    <div class="editor-toggle">
+      <button onclick="toggleEditor('regular')">✏️ Regular Post</button>
+      <button onclick="toggleEditor('canvas')">🖌️ Canvas Editor</button>
+    </div>
+
+    <div id="addPostSection" class="add-post">
+      <h2>Add Regular Post</h2>
+      <input type="text" id="post-title" placeholder="Post Title" />
+      <textarea id="post-content" rows="5" placeholder="Write your post here..."></textarea>
+      <input type="text" id="post-image" placeholder="Image URL (optional)" />
+      <button onclick="addPost()">Publish Post</button>
+    </div>
+
+    <div id="canvasEditor" class="canvas-editor">
+      <h2>Canvas Post</h2>
+      <div class="canvas-toolbar">
+        <button onclick="addText()">Add Text</button>
+        <button onclick="addImage()">Add Image</button>
+      </div>
+      <div id="canvas-area"></div>
+      <br>
+      <button onclick="saveCanvas()">Publish Canvas</button>
+    </div>
+
+    <div id="posts-container"></div>
+  </div>
+
+  <script>
+    const isAdmin = true;
+    const posts = JSON.parse(localStorage.getItem('mennaveresePosts')) || [];
+
+    function toggleEditor(mode) {
+      document.getElementById('addPostSection').style.display = mode === 'regular' ? 'block' : 'none';
+      document.getElementById('canvasEditor').style.display = mode === 'canvas' ? 'block' : 'none';
+    }
+
+    function savePosts() {
+      localStorage.setItem('mennaveresePosts', JSON.stringify(posts));
+    }
+
+    function addPost() {
+      const title = document.getElementById('post-title').value;
+      const content = document.getElementById('post-content').value;
+      const imageUrl = document.getElementById('post-image').value;
+      const date = new Date().toLocaleDateString('en-GB');
+
+      posts.unshift({ type: 'regular', title, content, imageUrl, date });
+      savePosts();
+      location.reload();
+    }
+
+    function addText() {
+      const text = prompt("Enter your text:");
+      if (!text) return;
+      const el = document.createElement("div");
+      el.className = "draggable";
+      el.style.top = "10px";
+      el.style.left = "10px";
+      el.style.fontSize = "16px";
+      el.innerText = text;
+      makeDraggable(el);
+      document.getElementById("canvas-area").appendChild(el);
+    }
+
+    function addImage() {
+      const url = prompt("Enter image URL:");
+      if (!url) return;
+      const img = document.createElement("img");
+      img.src = url;
+      img.style.width = "100px";
+      img.className = "draggable";
+      img.style.top = "10px";
+      img.style.left = "10px";
+      makeDraggable(img);
+      document.getElementById("canvas-area").appendChild(img);
+    }
+
+    function makeDraggable(el) {
+      el.draggable = true;
+      el.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("text/plain", null);
+        el.dataset.offsetX = e.offsetX;
+        el.dataset.offsetY = e.offsetY;
+      });
+      el.addEventListener("dragend", (e) => {
+        const canvas = document.getElementById("canvas-area");
+        const rect = canvas.getBoundingClientRect();
+        el.style.left = (e.pageX - rect.left - el.dataset.offsetX) + "px";
+        el.style.top = (e.pageY - rect.top - el.dataset.offsetY) + "px";
+      });
+    }
+
+    function saveCanvas() {
+      const canvas = document.getElementById("canvas-area");
+      const html = canvas.innerHTML;
+      const date = new Date().toLocaleDateString('en-GB');
+      posts.unshift({ type: 'canvas', html, date });
+      savePosts();
+      location.reload();
+    }
+
+    function loadPosts() {
+      const container = document.getElementById('posts-container');
+      posts.forEach((post) => {
+        const postElement = document.createElement('div');
+        postElement.className = 'post';
+        if (post.type === 'regular') {
+          postElement.innerHTML = `
+            <h2>${post.title}</h2>
+            <div class="date">${post.date}</div>
+            ${post.imageUrl ? `<img src="${post.imageUrl}" />` : ''}
+            <p>${post.content.replace(/\n/g, '<br>')}</p>
+          `;
+        } else if (post.type === 'canvas') {
+          postElement.innerHTML = `
+            <h2>Canvas Post</h2>
+            <div class="date">${post.date}</div>
+            <div style="border: 1px dashed #aa8855; padding: 10px;">${post.html}</div>
+          `;
+        }
+        container.appendChild(postElement);
+      });
+    }
+
+    window.onload = function () {
+      loadPosts();
+    };
+  </script>
+</body>
+</html>
